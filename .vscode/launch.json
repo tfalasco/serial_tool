@@ -8,7 +8,7 @@
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/serial_tool",
+        "program": "${workspaceFolder}/build/serial_tool",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",

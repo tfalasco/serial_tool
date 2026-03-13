@@ -9,7 +9,7 @@
                 "-g", // Include debugging info
                 "serial_tool.c", // The main file
                 "-o", // Specify the output file
-                "${workspaceFolder}/serial_tool" // Output path and name (adjust extension for non-Windows)
+                "${workspaceFolder}/build/serial_tool" // Output path and name (adjust extension for non-Windows)
             ],
             "group": {
                 "kind": "build",
