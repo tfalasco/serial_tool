@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "C Build serial_tool",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g", // Include debugging info
+                "serial_tool.c", // The main file
+                "-o", // Specify the output file
+                "${workspaceFolder}/serial_tool" // Output path and name (adjust extension for non-Windows)
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true // Makes this the default build task (Ctrl+Shift+B)
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$gcc" // Use the GCC problem matcher to highlight errors
+        }
+    ]
+}
