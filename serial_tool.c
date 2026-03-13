@@ -1,3 +1,16 @@
+/*
+ * serial_tool - Interactive UART debugging utility
+ *
+ * Author: Ted Falasco
+ *
+ * Portions of this code were developed with assistance from ChatGPT
+ * (OpenAI) as a programming aid. All code was reviewed and tested by
+ * the author.
+ * 
+ * Version 1.0
+ * Date: 2026-03-13
+ */
+
 // These two lines not entirely required, but needed for Intelisense bug
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
@@ -15,6 +28,8 @@
 
 #define RX_BUF_SIZE 256
 #define LINE_BUF_SIZE 256
+#define PACKET_TIMEOUT_MS 10
+#define PACKET_BUF_SIZE 1024
 
 static speed_t baud_to_flag(int baud)
 {
@@ -179,6 +194,14 @@ static const char *progname(const char *path)
     return p ? p + 1 : path;
 }
 
+static long time_ms()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    return (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -200,6 +223,9 @@ int main(int argc, char **argv)
     uint8_t rxbuf[RX_BUF_SIZE];
     uint8_t txbuf[256];
     char line[LINE_BUF_SIZE];
+    uint8_t packet_buf[PACKET_BUF_SIZE];
+    int packet_len = 0;
+    long last_rx_time = time_ms();
 
     while (1)
     {
@@ -219,33 +245,64 @@ int main(int argc, char **argv)
             break;
         }
 
+        /* ---- INSERT FLUSH CHECK HERE ---- */
+
+        long now = time_ms();
+
+        if (packet_len > 0 && (now - last_rx_time) > PACKET_TIMEOUT_MS)
+        {
+            timestamp();
+            printf("Packet (%d):\n", packet_len);
+            print_hex_ascii(packet_buf, packet_len);
+            printf("\n");
+
+            packet_len = 0;
+        }
+
+        /* ---- SERIAL INPUT ---- */
+
         if (FD_ISSET(fd, &readfds))
         {
             int n = read(fd, rxbuf, RX_BUF_SIZE);
 
             if (n > 0)
             {
-                timestamp();
-                print_hex_ascii(rxbuf, n);
-                printf("> ");
-                fflush(stdout);
+                now = time_ms();
+
+                /* detect boundary between packets */
+
+                if (packet_len > 0 && (now - last_rx_time) > PACKET_TIMEOUT_MS)
+                {
+                    timestamp();
+                    printf("Packet (%d):\n", packet_len);
+                    print_hex_ascii(packet_buf, packet_len);
+                    printf("\n");
+
+                    packet_len = 0;
+                }
+
+                if (packet_len + n < PACKET_BUF_SIZE)
+                {
+                    memcpy(&packet_buf[packet_len], rxbuf, n);
+                    packet_len += n;
+                }
+
+                last_rx_time = now;
             }
         }
+
+        /* ---- USER INPUT ---- */
 
         if (FD_ISSET(STDIN_FILENO, &readfds))
         {
             if (fgets(line, sizeof(line), stdin))
             {
-                int len = 0;
+                int len;
 
                 if (line[0] == '"')
-                {
                     len = parse_ascii_line(line, txbuf);
-                }
                 else
-                {
                     len = parse_hex_line(line, txbuf);
-                }
 
                 if (len > 0)
                 {
