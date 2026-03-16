@@ -28,7 +28,7 @@
 
 #define RX_BUF_SIZE 256
 #define LINE_BUF_SIZE 256
-#define PACKET_TIMEOUT_MS 10
+#define PACKET_TIMEOUT_MS 30
 #define PACKET_BUF_SIZE 1024
 
 static speed_t baud_to_flag(int baud)
@@ -236,8 +236,12 @@ int main(int argc, char **argv)
         FD_SET(STDIN_FILENO, &readfds);
 
         int maxfd = fd > STDIN_FILENO ? fd : STDIN_FILENO;
+        
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 1000 * PACKET_TIMEOUT_MS;
 
-        int ret = select(maxfd + 1, &readfds, NULL, NULL, NULL);
+        int ret = select(maxfd + 1, &readfds, NULL, NULL, &tv);
 
         if (ret < 0)
         {
