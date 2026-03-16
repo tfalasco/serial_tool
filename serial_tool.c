@@ -261,6 +261,9 @@ int main(int argc, char **argv)
             printf("\n");
 
             packet_len = 0;
+
+            printf("> ");
+            fflush(stdout);
         }
 
         /* ---- SERIAL INPUT ---- */
