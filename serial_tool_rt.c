@@ -234,6 +234,9 @@ static bool check_output(FILE *fp, uint8_t* packet_buf, uint8_t packet_len)
                 retval = false;
             }
         }
+    }else
+    {
+        retval = false;
     }
     return retval;
 }
